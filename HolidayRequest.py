@@ -3,9 +3,35 @@ from functools import reduce
 import pandas as pd
 
 
-def get_holiday_range(region: str = "noord", selected_years: list = ["2019 - 2020", "2020 - 2021"]):
-    """[summary]
+def get_2019_2018(region: str = "noord"):
+    """Gets school holidays for the period 2018-2019, at time of writing this had to be sourced from:
+    https://educatie-en-school.infonu.nl/diversen/156971-schoolvakanties-schooljaar-2018-2019.html
     
+    :param region: [description], defaults to "noord"
+    :type region: str, optional
+    :return: [description]
+    :rtype: [type]
+    """
+    if region == "noord":
+        dates = [(False, "2019-07-13T22:00:00.000Z",
+                  "2019-08-25T22:00:00.000Z")]
+    elif region == "midden":
+        dates = [(False, "2019-07-20T22:00:00.000Z",
+                  "2019-09-01T22:00:00.000Z")]
+    elif region == "midden":
+        dates = [(False, "2019-07-06T22:00:00.000Z",
+                  "2019-08-18T22:00:00.000Z")]
+
+    return dates + [(False, "2018-10-20T22:00:00.000Z", "2018-10-28T22:00:00.000Z"),
+                    (False, "2018-12-22T22:00:00.000Z", "2019-01-06T22:00:00.000Z"),
+                    (False, "2019-02-16T22:00:00.000Z", "2019-02-24T22:00:00.000Z"),
+                    (False, "2019-04-27T22:00:00.000Z", "2019-05-03T22:00:00.000Z")]
+
+
+def get_holiday_range(region: str = "noord", selected_years: list = ["2018-2019", "2019 - 2020", "2020 - 2021"]):
+    """Gets a daterange series for all years in selected_years from:
+    https://opendata.rijksoverheid.nl/v1/sources/rijksoverheid/infotypes/schoolholidays
+
     :param region: [description], defaults to "noord"
     :type region: str, optional
     :param selected_years: Note that after "2020 - 2021" there are no spaces between the years, defaults to ["2019 - 2020", "2020 - 2021"]
@@ -31,7 +57,10 @@ def get_holiday_range(region: str = "noord", selected_years: list = ["2019 - 202
         "enddate")) for date in dates][0]) for compulsory, dates in x]), comp_regions)
     dates3d = reduce(lambda x, y: x + y, dates)
     dates2d = [(x, y, z) for x, (y, z) in dates3d]
-
+    
+    if "2018-2019" in selected_years:
+        dates2d += get_2019_2018(region=region)
+ 
     df = pd.DataFrame(dates2d, columns=[
                       "Compulsory", "Start date", "End date"])
 
