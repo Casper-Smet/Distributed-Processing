@@ -4,6 +4,7 @@ import pandas as pd
 from typing import List
 
 YYYYMMDDHH = str
+YYMMDD = str
 YY = str
 MM = str
 DD = str
@@ -48,6 +49,42 @@ def data_dictionary():
 
     return data_dict
 
+def get_KNMI_DD(stations: List[str] = ["240"], vars_: List[str] = ["T", "R", "O", "S", "VV", "RH"], start: YYMMDD = None,
+                end: YYMMDD = None, inseason: bool = False):
+
+    parameters = dict()
+    parameters["stns"] = ":".join(stations)
+    parameters["vars"] = ":".join(vars_)
+
+    if inseason and (start or end):
+        parameters["inseason"] = "y"
+        if start:
+            byear, bmonth, bday = start[:4], start[4:6], start[6:8]
+            parameters["byear"] = byear
+            parameters["bmonth"] = bmonth
+            parameters["bday"] = bday
+        if end:
+            eyear, emonth, eday = end[:4], end[4:6], end[6:8]
+            parameters["eyear"] = eyear
+            parameters["emonth"] = emonth
+            parameters["eday"] = eday
+    else:
+        if start:
+            parameters["start"] = start
+        if end:
+            parameters["end"] = end
+
+    headers = ["Station", "Date"] + vars_
+    dtypes = {"Station": str, "Date": str}
+
+    url = r"http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi"
+    response = requests.get(url, params=parameters)
+    response.url
+    output = StringIO(response.text)
+    df = pd.read_csv(output, comment="#", names=headers, dtype=dtypes)
+    df["Date"] = pd.to_datetime(df["Date"], format="%Y%m%d")
+
+    return df
 
 def get_KNMI_HH(stations: List[str] = ["240"], vars_: List[str] = ["T", "R", "O", "S", "VV", "RH"], start: YYYYMMDDHH = None,
                 end: YYYYMMDDHH = None, inseason: bool = False):
@@ -103,9 +140,12 @@ def get_KNMI_HH(stations: List[str] = ["240"], vars_: List[str] = ["T", "R", "O"
 
 
 def main():
+    print(data_dictionary)
     df = get_KNMI_HH(inseason=True, start="2000050200", end="2002060123")
     print(df)
-    print(data_dictionary)
+
+    df = get_KNMI_DD(start="20200502", end="20200504")
+    print(df)
 
 
 data_dictionary = data_dictionary()
